@@ -80,3 +80,34 @@ pharma <- pharma %>%
 pharma <- pharma %>%
   mutate(response = factor(case_when(ZIOPTAN >= 1 ~ 1, 
                                      ZIOPTAN <  1 ~ 0)))
+
+#create balanced dataset
+pharma_no_zioptan <- pharma %>%
+  filter(response == 0)
+
+pharma_zioptan <- pharma %>%
+  filter(response == 1)
+
+set.seed(23)
+pharma_no_zioptan <- pharma_no_zioptan[sample(nrow(pharma_no_zioptan), nrow(pharma_zioptan)), ]
+
+pharma <- rbind(pharma_zioptan, pharma_no_zioptan)
+
+#look at relationship between predictors and response
+#isolate categorical variables
+pharma_cat <- pharma %>%
+  select(Specialty, Current.Target, Region, response)
+
+
+#plot bar charts
+ggplot(data=pharma_cat, aes(x=Specialty, fill=response)) + 
+  geom_bar( position='dodge') +
+  ggtitle("Specialty")
+
+ggplot(data=pharma_cat, aes(x=Current.Target, fill=response)) + 
+  geom_bar(position='dodge') +
+  ggtitle("Current Target")
+
+ggplot(data=pharma_cat, aes(x=Region, fill=response)) + 
+  geom_bar(position='dodge') +
+  ggtitle("Region")
