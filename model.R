@@ -111,3 +111,25 @@ ggplot(data=pharma_cat, aes(x=Current.Target, fill=response)) +
 ggplot(data=pharma_cat, aes(x=Region, fill=response)) + 
   geom_bar(position='dodge') +
   ggtitle("Region")
+
+
+
+#isolate quantitative variables
+pharma_quant <- pharma %>%
+  select(-Specialty, -Current.Target, -IQVIA.ID, -Region, -response)
+
+#correlation matrix
+correl <- cor(pharma_quant)
+correl_z <-cor(pharma_quant)[,25, drop=FALSE]
+
+par(mfrow=c(1,1))
+# visualizing correlogram
+corrplot(correl, method="color", diag=FALSE, type='upper')
+corrplot(correl_z, method="color", cl.pos='n')
+
+#Strongest to weakest correlation table
+cor_mat_z <- as.data.frame.table(cor(pharma_quant)) %>%
+  filter(Var1 == "ZIOPTAN") %>%
+  rename(Product1 = Var1, Product2 = Var2, Correlation_Coefficient = Freq) %>%
+  mutate(Correlation_Coefficient = round(Correlation_Coefficient,3)) %>%
+  arrange(desc(Correlation_Coefficient))
