@@ -76,6 +76,22 @@ pharma <- pharma %>%
 pharma <- pharma %>%
   replace(is.na(.), 0)
 
+#combine logical groups of products to reduce dimensionality
+pharma <- pharma %>%
+  mutate(generic_PGA = LATANOPROST + TRAVOPROST, 
+         branded_PGA = LUMIGAN + XALATAN + `TRAVATAN Z` + XELPROS,
+         generic_beta_blocker = `TIMOLOL MAL` + `TIMOLOL MAL/DORZ HCL` +  `TIMOLOL MAL/DORZ HCL /AURO`,
+         branded_beta_blocker = BETIMOL + ISTALOL + TIMOPTIC + `TIMOPTIC-XE`,
+         rho_kinase = RHOPRESSA + ROCKLATAN,
+         alpha_agonist = `BRIMONIDINE TART` + `ALPHAGAN P` + SIMBRINZA,
+         combo = AZOPT + COSOPT + VYZULTA + `COSOPT PF` + COMBIGAN,
+         non_glaucoma = BESIVANCE + AZASITE + GATIFLOXACIN + MOXEZA + `TOBRADEX ST` + VIGAMOX + ZYMAXID) %>%
+  select(-c(6:28,30:37))
+
+#Filter out doctors with no glaucoma prescriptions at all
+pharma <- pharma %>%
+  filter(ZIOPTAN + generic_PGA + branded_PGA + generic_beta_blocker + branded_beta_blocker + rho_kinase + alpha_agonist + combo != 0)
+
 #define response variable (Zioptan) as binary
 pharma <- pharma %>%
   mutate(response = factor(case_when(ZIOPTAN >= 1 ~ 1, 
@@ -146,8 +162,9 @@ data_used = pharma
 #hyper-parameters
 lambdalist = c(0:5)/10
 sizelist = c(1:5)
-clist = c(.001, .01, .1, 1, 5, 10, 100)
-sigmalist = c(0.5, 1, 2, 3, 4)
+clist = c(.001, .01, 1, 5, 10)
+sigmalist = c(0.5, 1, 2, 3)
+klist - c(1:5)
   
 #cv definition
 ctrl = trainControl(method = "cv", number = 10)
@@ -173,7 +190,7 @@ fit_ANN_init = train(response ~ . -IQVIA.ID,
 fit_KNN_init = train(response ~ . -IQVIA.ID,
                      data = data_used,
                      method = "knn",
-                     tuneGrid = expand.grid(k = 1:10),
+                     tuneGrid = expand.grid(k = klist),
                      preProc = c("center", "scale"),
                      trControl = ctrl)
 
@@ -194,3 +211,9 @@ fit_LR_init = train( response ~ . -IQVIA.ID,
                      preProcess = c("center","scale"),
                      prob.model = TRUE,
                      trControl = ctrl)
+
+
+plot(fit_RandomForest_init) #mtry = 2
+fit_RandomForest_init
+
+        
