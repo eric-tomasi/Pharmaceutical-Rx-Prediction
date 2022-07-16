@@ -133,3 +133,45 @@ cor_mat_z <- as.data.frame.table(cor(pharma_quant)) %>%
   rename(Product1 = Var1, Product2 = Var2, Correlation_Coefficient = Freq) %>%
   mutate(Correlation_Coefficient = round(Correlation_Coefficient,3)) %>%
   arrange(desc(Correlation_Coefficient))
+
+
+#remove ZIOPTAN  for modeling
+pharma <- pharma %>%
+  select(-ZIOPTAN)
+
+######################### Model selection via cross-validation #########################
+#Data
+data_used = pharma
+
+#hyper-parameters
+lambdalist = c(0:5)/10
+sizelist = c(1:5)
+
+#cv definition
+ctrl = trainControl(method = "cv", number = 10)
+
+#Fit Random Forest
+fit_RandomForest_init = train(response ~ . -IQVIA.ID,
+                              data = data_used,
+                              method = "rf",
+                              trControl = ctrl)
+
+#Fit ANN
+fit_ANN_init = train(response ~ . -IQVIA.ID,
+                     data = data_used,
+                     method = "nnet",
+                     tuneGrid = expand.grid(size = sizelist, 
+                                            decay = lambdalist),
+                     preProc = c("center", "scale"),
+                     maxit = 2000,
+                     trace = FALSE,
+                     trControl = ctrl)
+
+#Fit KNN
+fit_KNN_init = train(response ~ . -IQVIA.ID,
+                     data = data_used,
+                     method = "knn",
+                     tuneGrid = expand.grid(k = 1:10),
+                     preProc = c("center", "scale"),
+                     trControl = ctrl)
+
