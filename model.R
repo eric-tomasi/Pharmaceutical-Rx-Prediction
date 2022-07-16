@@ -167,7 +167,7 @@ sigmalist = c(0.5, 1, 2, 3)
 klist = c(1:5)
   
 #cv definition
-ctrl = trainControl(method = "cv", number = 10)
+ctrl = trainControl(method = "cv", number = 5)
 
 #Fit Random Forest
 fit_RandomForest_init = train(response ~ . -IQVIA.ID,
