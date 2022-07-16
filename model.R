@@ -84,7 +84,7 @@ pharma <- pharma %>%
          branded_beta_blocker = BETIMOL + ISTALOL + TIMOPTIC + `TIMOPTIC-XE`,
          rho_kinase = RHOPRESSA + ROCKLATAN,
          alpha_agonist = `BRIMONIDINE TART` + `ALPHAGAN P` + SIMBRINZA,
-         combo = AZOPT+ COSOPT + `COSOPT PF` + VYZULTA + COMBIGAN,
+         combo = AZOPT + COSOPT + `COSOPT PF` + VYZULTA + COMBIGAN,
          non_glaucoma = BESIVANCE + AZASITE + GATIFLOXACIN + MOXEZA + `TOBRADEX ST` + VIGAMOX + ZYMAXID) %>%
   select(-c(6:28,30:37))
 
@@ -92,7 +92,7 @@ pharma <- pharma %>% select(-non_glaucoma)
 
 #Filter out doctors with no glaucoma prescriptions at all
 pharma <- pharma %>%
-  filter(ZIOPTAN + AZOPT + `COSOPT PF` + `TIMOLOL MAL/DORZ HCL /AURO` + generic_PGA + branded_PGA + generic_beta_blocker + branded_beta_blocker + rho_kinase + alpha_agonist + combo != 0)
+  filter(ZIOPTAN + generic_PGA + branded_PGA + generic_beta_blocker + branded_beta_blocker + rho_kinase + alpha_agonist + combo >= 1)
 
 #define response variable (Zioptan) as binary
 pharma <- pharma %>%
@@ -164,7 +164,7 @@ lambdalist = c(0:5)/10
 sizelist = c(1:5)
 clist = c(.001, .01, 1, 5, 10)
 sigmalist = c(0.5, 1, 2, 3)
-klist = c(1:5)
+klist = c(1,3,5)
   
 #cv definition
 ctrl = trainControl(method = "cv", number = 5)
@@ -190,16 +190,16 @@ fit_ANN_init = train(response ~ . -IQVIA.ID,
 fit_KNN_init = train(response ~ . -IQVIA.ID,
                      data = data_used,
                      method = "knn",
-                     tuneGrid = expand.grid(k = klist),
+                     #tuneGrid = expand.grid(k = klist),
+                     tuneLength = 5,
                      preProc = c("center", "scale"),
                      trControl = ctrl)
 
-# Fit SVM w non-linear kernel
+# Fit SVM w linear kernel
 fit_SVM_init = train(response ~ . -IQVIA.ID,
                     data = data_used,
-                    method = "svmRadial",
-                    tuneGrid = expand.grid(C = clist,
-                                           sigma = sigmalist),
+                    method = "svmLinear",
+                    tuneGrid = expand.grid(C = clist),
                     preProcess = c("center","scale"),
                     prob.model = TRUE,
                     trControl = ctrl)
