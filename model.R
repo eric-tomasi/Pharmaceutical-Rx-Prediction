@@ -146,7 +146,9 @@ data_used = pharma
 #hyper-parameters
 lambdalist = c(0:5)/10
 sizelist = c(1:5)
-
+clist = c(.001, .01, .1, 1, 5, 10, 100)
+sigmalist = c(0.5, 1, 2, 3, 4)
+  
 #cv definition
 ctrl = trainControl(method = "cv", number = 10)
 
@@ -175,3 +177,20 @@ fit_KNN_init = train(response ~ . -IQVIA.ID,
                      preProc = c("center", "scale"),
                      trControl = ctrl)
 
+# Fit SVM w non-linear kernel
+fit_SVM_init = train(response ~ . -IQVIA.ID,
+                    data = data_used,
+                    method = "svmRadial",
+                    tuneGrid = expand.grid(C = clist,
+                                           sigma = sigmalist),
+                    preProcess = c("center","scale"),
+                    prob.model = TRUE,
+                    trControl = ctrl)
+
+# Fit LR
+fit_LR_init = train( response ~ . -IQVIA.ID,
+                     data = data_used,
+                     method = "glm",
+                     preProcess = c("center","scale"),
+                     prob.model = TRUE,
+                     trControl = ctrl)
