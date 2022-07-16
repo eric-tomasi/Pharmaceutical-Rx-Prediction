@@ -91,11 +91,11 @@ pharma <- pharma %>%
 pharma <- pharma %>% select(-non_glaucoma)
 
 #reorder columns so zioptan is first quant variable
-pharma <- pharma[, c(1:5,9,6:8,10:17)]
+pharma <- pharma[, c(1:5,9,6:8,10:16)]
 
 #Filter out doctors with no glaucoma prescriptions at all
 pharma <- pharma %>%
-  filter(ZIOPTAN + AZOPT + `TIMOLOL MAL/DOZ HCL /AURO` + generic_PGA + branded_PGA + generic_beta_blocker + branded_beta_blocker + rho_kinase + alpha_agonist + combo != 0)
+  filter(ZIOPTAN + AZOPT + `COSOPT PF` + `TIMOLOL MAL/DORZ HCL /AURO` + generic_PGA + branded_PGA + generic_beta_blocker + branded_beta_blocker + rho_kinase + alpha_agonist + combo != 0)
 
 #define response variable (Zioptan) as binary
 pharma <- pharma %>%
