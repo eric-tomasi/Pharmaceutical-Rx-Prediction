@@ -80,17 +80,20 @@ pharma <- pharma %>%
 pharma <- pharma %>%
   mutate(generic_PGA = LATANOPROST + TRAVOPROST, 
          branded_PGA = LUMIGAN + XALATAN + `TRAVATAN Z` + XELPROS,
-         generic_beta_blocker = `TIMOLOL MAL` + `TIMOLOL MAL/DORZ HCL` +  `TIMOLOL MAL/DORZ HCL /AURO`,
+         generic_beta_blocker = `TIMOLOL MAL` + `TIMOLOL MAL/DORZ HCL`,
          branded_beta_blocker = BETIMOL + ISTALOL + TIMOPTIC + `TIMOPTIC-XE`,
          rho_kinase = RHOPRESSA + ROCKLATAN,
          alpha_agonist = `BRIMONIDINE TART` + `ALPHAGAN P` + SIMBRINZA,
-         combo = AZOPT + COSOPT + VYZULTA + `COSOPT PF` + COMBIGAN,
+         combo = COSOPT + VYZULTA + COMBIGAN,
          non_glaucoma = BESIVANCE + AZASITE + GATIFLOXACIN + MOXEZA + `TOBRADEX ST` + VIGAMOX + ZYMAXID) %>%
-  select(-c(6:28,30:37))
+  select(-c(6:11,13:18,20:25,27:28,30:37))
+
+#reorder columns so zioptan is first quant variable
+pharma <- pharma[, c(1:5,9,6:8,10:17)]
 
 #Filter out doctors with no glaucoma prescriptions at all
 pharma <- pharma %>%
-  filter(ZIOPTAN + generic_PGA + branded_PGA + generic_beta_blocker + branded_beta_blocker + rho_kinase + alpha_agonist + combo != 0)
+  filter(ZIOPTAN + AZOPT + `TIMOLOL MAL/DOZ HCL /AURO` + generic_PGA + branded_PGA + generic_beta_blocker + branded_beta_blocker + rho_kinase + alpha_agonist + combo != 0)
 
 #define response variable (Zioptan) as binary
 pharma <- pharma %>%
@@ -136,15 +139,13 @@ pharma_quant <- pharma %>%
 
 #correlation matrix
 correl <- cor(pharma_quant)
-correl_z <-cor(pharma_quant)[,25, drop=FALSE]
 
 par(mfrow=c(1,1))
 # visualizing correlogram
 corrplot(correl, method="color", diag=FALSE, type='upper')
-corrplot(correl_z, method="color", cl.pos='n')
 
 #Strongest to weakest correlation table
-cor_mat_z <- as.data.frame.table(cor(pharma_quant)) %>%
+cor_mat <- as.data.frame.table(cor(pharma_quant)) %>%
   filter(Var1 == "ZIOPTAN") %>%
   rename(Product1 = Var1, Product2 = Var2, Correlation_Coefficient = Freq) %>%
   mutate(Correlation_Coefficient = round(Correlation_Coefficient,3)) %>%
@@ -164,7 +165,7 @@ lambdalist = c(0:5)/10
 sizelist = c(1:5)
 clist = c(.001, .01, 1, 5, 10)
 sigmalist = c(0.5, 1, 2, 3)
-klist - c(1:5)
+klist = c(1:5)
   
 #cv definition
 ctrl = trainControl(method = "cv", number = 10)
