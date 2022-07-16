@@ -80,18 +80,15 @@ pharma <- pharma %>%
 pharma <- pharma %>%
   mutate(generic_PGA = LATANOPROST + TRAVOPROST, 
          branded_PGA = LUMIGAN + XALATAN + `TRAVATAN Z` + XELPROS,
-         generic_beta_blocker = `TIMOLOL MAL` + `TIMOLOL MAL/DORZ HCL`,
+         generic_beta_blocker = `TIMOLOL MAL` + `TIMOLOL MAL/DORZ HCL` + `TIMOLOL MAL/DORZ HCL /AURO`,
          branded_beta_blocker = BETIMOL + ISTALOL + TIMOPTIC + `TIMOPTIC-XE`,
          rho_kinase = RHOPRESSA + ROCKLATAN,
          alpha_agonist = `BRIMONIDINE TART` + `ALPHAGAN P` + SIMBRINZA,
-         combo = COSOPT + VYZULTA + COMBIGAN,
+         combo = AZOPT+ COSOPT + `COSOPT PF` + VYZULTA + COMBIGAN,
          non_glaucoma = BESIVANCE + AZASITE + GATIFLOXACIN + MOXEZA + `TOBRADEX ST` + VIGAMOX + ZYMAXID) %>%
-  select(-c(6:11,13:18,20:25,27:28,30:37))
+  select(-c(6:28,30:37))
 
 pharma <- pharma %>% select(-non_glaucoma)
-
-#reorder columns so zioptan is first quant variable
-pharma <- pharma[, c(1:5,9,6:8,10:16)]
 
 #Filter out doctors with no glaucoma prescriptions at all
 pharma <- pharma %>%
