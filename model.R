@@ -88,6 +88,8 @@ pharma <- pharma %>%
          non_glaucoma = BESIVANCE + AZASITE + GATIFLOXACIN + MOXEZA + `TOBRADEX ST` + VIGAMOX + ZYMAXID) %>%
   select(-c(6:11,13:18,20:25,27:28,30:37))
 
+pharma <- pharma %>% select(-non_glaucoma)
+
 #reorder columns so zioptan is first quant variable
 pharma <- pharma[, c(1:5,9,6:8,10:17)]
 
