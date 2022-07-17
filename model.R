@@ -267,7 +267,7 @@ fit_LR = train( response ~ . -IQVIA.ID,
 
 ##### model assessment OUTER shell #####
 # prep data and produce loops for 5-fold cross-validation for model ASSESSMENT
-raw_data <- pharma
+raw_data <- pharma %>% select(-IQVIA.ID)
 n = dim(raw_data)[1]
 nfolds = 5
 groups = rep(1:nfolds,length=n) 
@@ -295,14 +295,14 @@ for (ii in 1:nfolds)  {
   ctrl = trainControl(method = "cv", number = 5)
   
   #Fit Random Forest
-  fit_RandomForest = train(response ~ . -IQVIA.ID,
+  fit_RandomForest = train(response ~ . ,
                            data = data_used,
                            method = "rf",
                            tuneGrid = expand.grid(mtry = mtrylist2),
                            trControl = ctrl)
   
   #Fit ANN
-  fit_ANN = train(response ~ . -IQVIA.ID,
+  fit_ANN = train(response ~ . ,
                   data = data_used,
                   method = "nnet",
                   tuneGrid = expand.grid(size = sizelist2, 
@@ -354,6 +354,52 @@ for (j in 1:nfolds) {
 
 
 #assessment
-y = pharma$product_A
+y = pharma$response
 conf_mat = table(allpredictedCV, y); conf_mat
 accuracy = sum(diag(conf_mat))/sum(conf_mat); accuracy
+
+
+
+
+######################### Fit final model to entire dataset #########################
+final_model <- randomForest(response~ . -IQVIA.ID, data=pharma, mtry=6, importance=TRUE)
+
+predictions = predict(final_model)
+
+#Accuracy
+conf_mat = table(predictions, y); conf_mat
+accuracy = sum(diag(conf_mat))/sum(conf_mat); accuracy
+
+
+
+
+
+######################### Model Visualizations #########################
+
+#Confusion Matrix
+confusion_matrix <- as.data.frame(table(predictions, y))
+
+ggplot(data = confusion_matrix,
+       mapping = aes(x = predictions,
+                     y = y)) +
+  labs(x = "Predicted", 
+       y = 'Actual', 
+       title = 'Confusion Matrix for Random Forest') +
+  geom_tile(aes(fill = Freq)) +
+  geom_text(aes(label = sprintf("%1.0f", Freq))) +
+  scale_fill_gradient(low = "light blue",
+                      high = "light green")
+
+#Variable importance
+importance(final_model)
+varImpPlot(final_model)
+
+
+partialPlot(final_model, pred.data = pharma,
+            x.var = Calls, which.class=1)
+partialPlot(final_model, pred.data = pharma,
+            x.var = Specialty, which.class=1)
+partialPlot(final_model, pred.data = pharma,
+            x.var = combo, which.class=1)
+partialPlot(final_model, pred.data = pharma,
+            x.var = generic_PGA, which.class=1)
