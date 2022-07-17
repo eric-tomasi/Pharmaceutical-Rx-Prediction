@@ -163,7 +163,6 @@ data_used = pharma
 lambdalist = c(0:5)/10
 sizelist = c(1:5)
 clist = c(.001, .01, 1, 5, 10)
-sigmalist = c(0.5, 1, 2, 3)
 klist = c(1,3,5)
   
 #cv definition
@@ -208,12 +207,153 @@ fit_SVM_init = train(response ~ . -IQVIA.ID,
 fit_LR_init = train( response ~ . -IQVIA.ID,
                      data = data_used,
                      method = "glm",
+                     family="binomial",
                      preProcess = c("center","scale"),
-                     prob.model = TRUE,
                      trControl = ctrl)
 
 
-plot(fit_RandomForest_init) #mtry = 2
-fit_RandomForest_init
+#refit both models with new hyperparameters to maximize performance based on initial run
+#New hyperparameters
+lambdalist2 = c(0.025, 0.05, 0.075, 0.1, 0.125, 0.15, 0.175)
+sizelist2 = c(1:5)
+clist2 = c(8, 9, 10, 11, 12, 15)
+klist2 = c(12,13,14,15,20)
+mtrylist2 = c(2,3,4,5,6,7)
 
-        
+#Fit Random Forest
+fit_RandomForest = train(response ~ . -IQVIA.ID,
+                         data = data_used,
+                         method = "rf",
+                         tuneGrid = expand.grid(mtry = mtrylist2),
+                         trControl = ctrl)
+
+#Fit ANN
+fit_ANN = train(response ~ . -IQVIA.ID,
+                data = data_used,
+                method = "nnet",
+                tuneGrid = expand.grid(size = sizelist2, 
+                                       decay = lambdalist2),
+                preProc = c("center", "scale"),
+                maxit = 2000,
+                trace = FALSE,
+                trControl = ctrl)
+
+#Fit KNN
+fit_KNN = train(response ~ . -IQVIA.ID,
+                data = data_used,
+                method = "knn",
+                tuneGrid = expand.grid(k = klist2),
+                preProc = c("center", "scale"),
+                trControl = ctrl)
+
+# Fit SVM w linear kernel
+fit_SVM = train(response ~ . -IQVIA.ID,
+                data = data_used,
+                method = "svmLinear",
+                tuneGrid = expand.grid(C = clist2),
+                preProcess = c("center","scale"),
+                prob.model = TRUE,
+                trControl = ctrl)
+
+# Fit LR
+fit_LR = train( response ~ . -IQVIA.ID,
+                data = data_used,
+                method = "glm",
+                family="binomial",
+                preProcess = c("center","scale"),
+                trControl = ctrl)
+
+######################### Double cross-validation for model assessment #########################
+
+##### model assessment OUTER shell #####
+# prep data and produce loops for 5-fold cross-validation for model ASSESSMENT
+raw_data <- pharma
+n = dim(raw_data)[1]
+nfolds = 5
+groups = rep(1:nfolds,length=n) 
+set.seed(101)
+cvgroups = sample(groups,n)  
+
+# set up storage for predicted values from the double-cross-validation
+allpredictedCV = rep(NA,n)
+
+# set up storage to see what models are "best" on the inner loops
+allbestTypes = rep(NA,nfolds)
+allbestPars = vector("list",nfolds)
+
+# loop through outer splits
+for (ii in 1:nfolds)  {  
+  groupii = (cvgroups == ii)
+  train_set = raw_data[!groupii, ]
+  test_set = raw_data[groupii, ]
+  
+  #specify data to be used
+  data_used = train_set
+  
+  # set up training method
+  set.seed(101)
+  ctrl = trainControl(method = "cv", number = 5)
+  
+  #Fit Random Forest
+  fit_RandomForest = train(response ~ . -IQVIA.ID,
+                           data = data_used,
+                           method = "rf",
+                           tuneGrid = expand.grid(mtry = mtrylist2),
+                           trControl = ctrl)
+  
+  #Fit ANN
+  fit_ANN = train(response ~ . -IQVIA.ID,
+                  data = data_used,
+                  method = "nnet",
+                  tuneGrid = expand.grid(size = sizelist2, 
+                                         decay = lambdalist2),
+                  preProc = c("center", "scale"),
+                  maxit = 2000,
+                  trace = FALSE,
+                  trControl = ctrl)
+  
+  
+  ############# identify best model  #############
+  # all best models
+  all_best_Types = c("RF", "ANN")
+  all_best_Pars = list(fit_RandomForest$bestTune,fit_ANN$bestTune)
+  all_best_Models = list(fit_RandomForest, fit_ANN)
+  all_best_Accuracy = c(min(fit_RandomForest$results$Accuracy),
+                        min(fit_ANN$results$Accuracy))
+  
+  
+  
+  one_best_Type = all_best_Types[which.max(all_best_Accuracy)]
+  one_best_Pars = all_best_Pars[which.max(all_best_Accuracy)]
+  one_best_Model = all_best_Models[[which.max(all_best_Accuracy)]]
+  
+  allbestTypes[ii] = one_best_Type
+  allbestPars[[ii]] = one_best_Pars
+  
+  #Store prediction
+  if (one_best_Type == "RF") {  
+    allpredictedCV[groupii] = predict(fit_RandomForest, newdata = test_set)
+  } else if (one_best_Type == "ANN") { 
+    allpredictedCV[groupii]  = predict(fit_ANN, newdata = test_set)
+  } 
+  
+}
+
+
+# identify best model on each of the splits
+allbestTypes
+allbestPars
+# print individually
+for (j in 1:nfolds) {
+  writemodel = paste("The best model at loop", j, 
+                     "is of type", allbestTypes[j],
+                     "with parameter(s)",allbestPars[[j]])
+  print(writemodel, quote = FALSE)
+}
+
+
+
+#assessment
+y = pharma$product_A
+conf_mat = table(allpredictedCV, y); conf_mat
+accuracy = sum(diag(conf_mat))/sum(conf_mat); accuracy
