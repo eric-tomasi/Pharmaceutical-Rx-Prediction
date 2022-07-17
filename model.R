@@ -396,10 +396,10 @@ varImpPlot(final_model)
 
 
 partialPlot(final_model, pred.data = pharma,
-            x.var = Calls, which.class=1)
+            x.var = Calls, which.class=1, xlim=c(0,67))
 partialPlot(final_model, pred.data = pharma,
             x.var = Specialty, which.class=1)
 partialPlot(final_model, pred.data = pharma,
-            x.var = combo, which.class=1)
+            x.var = combo, which.class=1, xlim=c(0,500))
 partialPlot(final_model, pred.data = pharma,
-            x.var = generic_PGA, which.class=1)
+            x.var = generic_PGA, which.class=1, xlim=c(0,1000))
